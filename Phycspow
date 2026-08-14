@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physic Pow</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --card-bg: #0f172a;
+            --accent-blue: #38bdf8;
+            --accent-orange: #f97316;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1440px;
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 16px;
+        }
+
+        /* Panels */
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent-orange);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            letter-spacing: 0.5px;
+        }
+
+        /* Control Inputs */
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-blue);
+            cursor: pointer;
+        }
+
+        .unit-badge {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            min-width: 32px;
+            text-align: right;
+        }
+
+        .value-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            min-width: 58px;
+            text-align: center;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            padding: 2px 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #475569;
+            transition: .3s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-blue); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn-reset { background-color: #334155; color: var(--text-main); }
+        .btn-fire { background-color: var(--accent-orange); color: #000; font-weight: 700; }
+
+        /* Canvas & Display Area */
+        .center-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .canvas-card {
+            background-color: #020617;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-toolbar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            background: rgba(15, 23, 42, 0.85);
+            padding: 6px 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+            border: 1px solid var(--border-color);
+        }
+
+        .zoom-btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-btn:hover { background: var(--accent-blue); color: #000; }
+
+        canvas {
+            width: 100%;
+            height: 400px;
+            display: block;
+            cursor: grab;
+        }
+
+        canvas:active { cursor: grabbing; }
+
+        /* Camera Controls Panel */
+        .camera-panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .camera-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .camera-controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+
+        /* Quiz Panel */
+        .quiz-panel {
+            grid-column: 3;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .level-badge {
+            background-color: #1e1b4b;
+            color: #818cf8;
+            border: 1px solid #3730a3;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .question-text {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: var(--text-main);
+            min-height: 50px;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-item:hover {
+            border-color: var(--accent-blue);
+            background-color: #1e293b;
+        }
+
+        .option-item.selected {
+            border-color: var(--accent-orange);
+            background-color: rgba(249, 115, 22, 0.1);
+        }
+
+        .option-item.correct {
+            border-color: var(--accent-green);
+            background-color: rgba(34, 197, 94, 0.1);
+        }
+
+        .option-item.incorrect {
+            border-color: var(--accent-red);
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .quiz-feedback {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            min-height: 36px;
+        }
+
+        .quiz-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-action-quiz {
+            background-color: var(--accent-blue);
+            color: #000;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-demo-quiz {
+            background-color: #334155;
+            color: var(--accent-orange);
+            border: 1px solid var(--accent-orange);
+        }
+
+        .btn-next-quiz {
+            background-color: var(--accent-green);
+            color: #000;
+            display: none;
+        }
+
+        .progress-box {
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background-color: var(--card-bg);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent-blue);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 1. Controls Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    ⚡ Physic Pow
+                </div>
+            </div>
+
+            <div class="control-item">
+                <div class="control-label-row">
+                    <span>Initial Velocity (v₀):</span>
+                </div>
+                <div class="input-row">
+                    <input type="range" id="v0Slider" min="5" max="450" value="450">
+                    <div class="value-box" id="v0Val">450</div>
+                    <span class="unit-badge">m/s</span>
+                </div>
+            </div>
+
+            <div class="control-item">
+                <div class="control-label-row">
+                    <span>Launch Angle (θ):</span>
+                </div>
+                <div class="input-row">
+                    <input type="range" id="angleSlider" min="0" max="90" value="90">
+                    <div class="value-box" id="angleVal">90</div>
+                    <span class="unit-badge">°</span>
+                </div>
+            </div>
+
+            <div class="control-item">
+                <div class="control-label-row">
+                    <span>Initial Height (h₀):</span>
+                </div>
+                <div class="input-row">
+                    <input type="range" id="h0Slider" min="-1000" max="1000" value="0">
+                    <div class="value-box" id="h0Val">0</div>
+                    <span class="unit-badge">m</span>
+                </div>
+            </div>
+
+            <div class="control-item">
+                <div class="control-label-row">
+                    <span>Gravity (g):</span>
+                </div>
+                <div class="input-row">
+                    <input type="range" id="gSlider" min="1" max="20" step="0.1" value="10">
+                    <div class="value-box" id="gVal">10</div>
+                    <span class="unit-badge">m/s²</span>
+                </div>
+            </div>
+
+            <div class="control-item">
+                <div class="control-label-row">
+                    <span>Target Distance:</span>
+                </div>
+                <div class="input-row">
+                    <input type="range" id="targetSlider" min="10" max="1000" value="1000">
+                    <div class="value-box" id="targetVal">1000</div>
+                    <span class="unit-badge">m</span>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-color); margin: 2px 0;"></div>
+
+            <div class="toggle-row">
+                <span>Show Vectors (vₓ, vᵧ, g)</span>
+                <label class="switch">
+                    <input type="checkbox" id="showVectorsToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <span>Trace Path</span>
+                <label class="switch">
+                    <input type="checkbox" id="traceToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="action-btns">
+                <button class="btn btn-reset" id="resetBtn">↺ Reset</button>
+                <button class="btn btn-fire" id="fireBtn">▶ Start / Fire</button>
+            </div>
+        </div>
+
+        <!-- 2. Middle Area (Canvas Screen & Precision Meter Camera Controls) -->
+        <div class="center-column">
+            <div class="canvas-card">
+                <div class="canvas-toolbar">
+                    <span>Zoom:</span>
+                    <button class="zoom-btn" id="zoomOutBtn">-</button>
+                    <span id="zoomVal" style="color:var(--accent-blue); font-weight:bold;">1.0x</span>
+                    <button class="zoom-btn" id="zoomInBtn">+</button>
+                    <button class="zoom-btn" id="zoomResetBtn" style="width: auto; padding: 0 6px;" title="Reset View">Reset</button>
+                </div>
+                <canvas id="simCanvas"></canvas>
+            </div>
+
+            <!-- Precision Screen Inspection Controls -->
+            <div class="camera-panel">
+                <div class="camera-title">🔍 Viewport Adjuster (Inspect Specific Meters)</div>
+                <div class="camera-controls-grid">
+                    <div class="control-item">
+                        <div class="control-label-row"><span>Zoom Level:</span></div>
+                        <input type="range" id="zoomSlider" min="0.5" max="5" step="0.1" value="1">
+                    </div>
+                    <div class="control-item">
+                        <div class="control-label-row"><span>Pan Offset X:</span></div>
+                        <input type="range" id="panXSlider" min="-500" max="1500" value="0">
+                    </div>
+                    <div class="control-item">
+                        <div class="control-label-row"><span>Pan Offset Y:</span></div>
+                        <input type="range" id="panYSlider" min="-1000" max="1500" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-grid">
+                <div class="stat-item stat-card">
+                    <div class="stat-value" id="statT">0.00s</div>
+                    <div class="stat-label">Flight Time (t)</div>
+                </div>
+                <div class="stat-item stat-card">
+                    <div class="stat-value" id="statH">0.0m</div>
+                    <div class="stat-label">Peak Height (h<sub>max</sub>)</div>
+                </div>
+                <div class="stat-item stat-card">
+                    <div class="stat-value" id="statR">0.0m</div>
+                    <div class="stat-label">Range (R)</div>
+                </div>
+                <div class="stat-item stat-card">
+                    <div class="stat-value" id="statVf">0.0m/s</div>
+                    <div class="stat-label">Final Velocity (v<sub>f</sub>)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Physics Challenge & Auto-Test Panel -->
+        <div class="panel quiz-panel">
+            <div class="quiz-header">
+                <span style="font-weight: 700; font-size: 1rem;">Physics Challenge</span>
+                <span class="level-badge" id="levelBadge">LEVEL 1</span>
+            </div>
+
+            <div class="question-text" id="questionText">
+                Loading Question...
+            </div>
+
+            <div class="options-list" id="optionsList">
+                <!-- Dynamic Options -->
+            </div>
+
+            <div class="quiz-feedback" id="quizFeedback"></div>
+
+            <div class="quiz-btn-group">
+                <button class="btn-action-quiz btn-demo-quiz" id="demoQuizBtn">🚀 Load & Launch Question Setup</button>
+                <button class="btn-action-quiz" id="checkQuizBtn">Check Answer</button>
+                <button class="btn-action-quiz btn-next-quiz" id="nextQuizBtn">Next Question ➔</button>
+            </div>
+
+            <div class="progress-box">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Mastery Progress</span>
+                    <span id="masteryText" style="color: var(--text-main); font-weight: 600;">0 / 5 Mastered</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Question Bank System ---
+        const questionBank = [
+            {
+                level: 1,
+                question: "With launch angle θ = 90° and initial velocity v₀ = 450 m/s (g = 10 m/s²), what will be the horizontal range (R)?",
+                preset: { angle: 90, v0: 450, h0: 0, g: 10, target: 0 },
+                options: [
+                    { id: "A", text: "0 meters" },
+                    { id: "B", text: "450 meters" },
+                    { id: "C", text: "1000 meters" },
+                    { id: "D", text: "2025 meters" }
+                ],
+                correct: "A",
+                explanation: "Correct! When fired straight up (θ = 90°), the horizontal velocity vₓ = 0 m/s, so horizontal range is exactly 0 m."
+            },
+            {
+                level: 2,
+                question: "If initial velocity v₀ = 200 m/s at θ = 90° straight up (g = 10 m/s²), how long will it take to reach max height?",
+                preset: { angle: 90, v0: 200, h0: 0, g: 10, target: 0 },
+                options: [
+                    { id: "A", text: "10 seconds" },
+                    { id: "B", text: "20 seconds" },
+                    { id: "C", text: "40 seconds" },
+                    { id: "D", text: "100 seconds" }
+                ],
+                correct: "B",
+                explanation: "Correct! t_peak = v₀ / g = 200 / 10 = 20 seconds."
+            },
+            {
+                level: 3,
+                question: "With v₀ = 300 m/s at θ = 90° and g = 10 m/s², what maximum peak height does the projectile achieve?",
+                preset: { angle: 90, v0: 300, h0: 0, g: 10, target: 0 },
+                options: [
+                    { id: "A", text: "1500 m" },
+                    { id: "B", text: "3000 m" },
+                    { id: "C", text: "4500 m" },
+                    { id: "D", text: "9000 m" }
+                ],
+                correct: "C",
+                explanation: "Correct! h_max = v₀² / (2g) = 300² / 20 = 90,000 / 20 = 4,500 m."
+            },
+            {
+                level: 4,
+                question: "Starting at negative height h₀ = -500 m and firing straight up (θ = 90°, v₀ = 100 m/s), does it rise above y = 0 ground?",
+                preset: { angle: 90, v0: 100, h0: -500, g: 10, target: 100 },
+                options: [
+                    { id: "A", text: "No, peak is y = -250 m" },
+                    { id: "B", text: "Yes, peak is y = +100 m" },
+                    { id: "C", text: "No, peak is y = 0 m" },
+                    { id: "D", text: "Yes, peak is y = +500 m" }
+                ],
+                correct: "A",
+                explanation: "Correct! Rise height Δh = v₀² / 2g = 100² / 20 = 500m. Starting at -500m, peak is -500 + 500 = 0m!"
+            },
+            {
+                level: 5,
+                question: "When launching at θ = 45° with v₀ = 100 m/s (g = 10 m/s²), what is the calculated flat ground range?",
+                preset: { angle: 45, v0: 100, h0: 0, g: 10, target: 1000 },
+                options: [
+                    { id: "A", text: "500 m" },
+                    { id: "B", text: "1000 m" },
+                    { id: "C", text: "1414 m" },
+                    { id: "D", text: "2000 m" }
+                ],
+                correct: "B",
+                explanation: "Correct! Range R = v₀² / g = 100² / 10 = 10,000 / 10 = 1000 m."
+            }
+        ];
+
+        let currentQuestionIdx = 0;
+        let selectedOptionId = null;
+        let masteredCount = 0;
+
+        function loadQuestion(idx) {
+            const q = questionBank[idx];
+            document.getElementById('levelBadge').innerText = `LEVEL ${q.level}`;
+            document.getElementById('questionText').innerText = q.question;
+            
+            const optionsList = document.getElementById('optionsList');
+            optionsList.innerHTML = '';
+            selectedOptionId = null;
+
+            document.getElementById('quizFeedback').innerText = '';
+            document.getElementById('checkQuizBtn').style.display = 'block';
+            document.getElementById('nextQuizBtn').style.display = 'none';
+
+            q.options.forEach(opt => {
+                const item = document.createElement('div');
+                item.className = 'option-item';
+                item.innerText = `${opt.id}. ${opt.text}`;
+                item.setAttribute('data-id', opt.id);
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.option-item').forEach(o => o.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedOptionId = opt.id;
+                });
+                optionsList.appendChild(item);
+            });
+        }
+
+        document.getElementById('demoQuizBtn').addEventListener('click', () => {
+            const q = questionBank[currentQuestionIdx];
+            if (q.preset) {
+                inputs.v0.value = q.preset.v0;
+                inputs.angle.value = q.preset.angle;
+                inputs.h0.value = q.preset.h0;
+                inputs.g.value = q.preset.g;
+                inputs.target.value = q.preset.target;
+                syncInputs();
+                fireSimulation();
+            }
+        });
+
+        document.getElementById('checkQuizBtn').addEventListener('click', () => {
+            if (!selectedOptionId) return;
+
+            const q = questionBank[currentQuestionIdx];
+            const items = document.querySelectorAll('.option-item');
+
+            items.forEach(item => {
+                const id = item.getAttribute('data-id');
+                item.classList.remove('selected');
+                if (id === q.correct) {
+                    item.classList.add('correct');
+                } else if (id === selectedOptionId) {
+                    item.classList.add('incorrect');
+                }
+            });
+
+            if (selectedOptionId === q.correct) {
+                document.getElementById('quizFeedback').style.color = 'var(--accent-green)';
+                document.getElementById('quizFeedback').innerText = q.explanation;
+                
+                if (masteredCount <= currentQuestionIdx) {
+                    masteredCount = currentQuestionIdx + 1;
+                    updateMasteryProgress();
+                }
+
+                document.getElementById('checkQuizBtn').style.display = 'none';
+                if (currentQuestionIdx < questionBank.length - 1) {
+                    document.getElementById('nextQuizBtn').style.display = 'block';
+                }
+            } else {
+                document.getElementById('quizFeedback').style.color = 'var(--accent-red)';
+                document.getElementById('quizFeedback').innerText = "Incorrect. Tap 'Load & Launch Question Setup' to test it live on screen!";
+            }
+        });
+
+        document.getElementById('nextQuizBtn').addEventListener('click', () => {
+            if (currentQuestionIdx < questionBank.length - 1) {
+                currentQuestionIdx++;
+                loadQuestion(currentQuestionIdx);
+            }
+        });
+
+        function updateMasteryProgress() {
+            document.getElementById('masteryText').innerText = `${masteredCount} / ${questionBank.length} Mastered`;
+            const pct = (masteredCount / questionBank.length) * 100;
+            document.getElementById('progressBarFill').style.width = `${pct}%`;
+        }
+
+        // --- Canvas Engine, Zoom & Camera Logic ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let v0 = 450, angle = 90, h0 = 0, g = 10, targetDist = 1000;
+        let showVectors = true, tracePath = true;
+        let isAnimating = false, animationTime = 0, trajectory = [], animFrameId = null;
+
+        // Viewport & Zoom System
+        let camera = {
+            zoom: 1.0,
+            panX: 0,
+            panY: 0
+        };
+
+        let worldBounds = { xMin: 0, xMax: 1200, yMin: -1000, yMax: 1200 };
+
+        function updateCanvasDimensions() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = 400;
+            drawScene();
+        }
+
+        function toScreenX(x) { 
+            const baseScale = canvas.width / worldBounds.xMax;
+            return ((x - camera.panX) * baseScale * camera.zoom);
+        }
+
+        function toScreenY(y) { 
+            const yRange = worldBounds.yMax - worldBounds.yMin;
+            const baseScale = (canvas.height - 40) / yRange;
+            return canvas.height - (((y - worldBounds.yMin - camera.panY) * baseScale * camera.zoom)) - 20; 
+        }
+
+        const inputs = {
+            v0: document.getElementById('v0Slider'),
+            angle: document.getElementById('angleSlider'),
+            h0: document.getElementById('h0Slider'),
+            g: document.getElementById('gSlider'),
+            target: document.getElementById('targetSlider'),
+            showVectors: document.getElementById('showVectorsToggle'),
+            trace: document.getElementById('traceToggle')
+        };
+
+        const camInputs = {
+            zoom: document.getElementById('zoomSlider'),
+            panX: document.getElementById('panXSlider'),
+            panY: document.getElementById('panYSlider')
+        };
+
+        function syncInputs() {
+            v0 = parseFloat(inputs.v0.value);
+            angle = parseFloat(inputs.angle.value);
+            h0 = parseFloat(inputs.h0.value);
+            g = parseFloat(inputs.g.value);
+            targetDist = parseFloat(inputs.target.value);
+            showVectors = inputs.showVectors.checked;
+            tracePath = inputs.trace.checked;
+
+            document.getElementById('v0Val').innerText = v0;
+            document.getElementById('angleVal').innerText = angle;
+            document.getElementById('h0Val').innerText = h0;
+            document.getElementById('gVal').innerText = g.toFixed(1);
+            document.getElementById('targetVal').innerText = targetDist;
+
+            // Dynamically adjust viewport bounds
+            const rad = angle * Math.PI / 180;
+            const vy = v0 * Math.sin(rad);
+            const peakH = h0 + (vy > 0 ? (vy * vy) / (2 * g) : 0);
+            
+            worldBounds.xMax = Math.max(1200, targetDist * 1.2);
+            worldBounds.yMax = Math.max(1200, peakH * 1.2, h0 + 200);
+            worldBounds.yMin = Math.min(-1000, h0 - 200);
+
+            if (!isAnimating) {
+                calculateTheoreticalStats();
+                drawScene();
+            }
+        }
+
+        function syncCamera() {
+            camera.zoom = parseFloat(camInputs.zoom.value);
+            camera.panX = parseFloat(camInputs.panX.value);
+            camera.panY = parseFloat(camInputs.panY.value);
+            document.getElementById('zoomVal').innerText = `${camera.zoom.toFixed(1)}x`;
+            drawScene();
+        }
+
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', syncInputs);
+            input.addEventListener('change', syncInputs);
+        });
+
+        Object.values(camInputs).forEach(input => {
+            input.addEventListener('input', syncCamera);
+        });
+
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            camInputs.zoom.value = Math.min(5, camera.zoom + 0.3);
+            syncCamera();
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            camInputs.zoom.value = Math.max(0.5, camera.zoom - 0.3);
+            syncCamera();
+        });
+
+        document.getElementById('zoomResetBtn').addEventListener('click', () => {
+            camInputs.zoom.value = 1;
+            camInputs.panX.value = 0;
+            camInputs.panY.value = 0;
+            syncCamera();
+        });
+
+        function calculateTheoreticalStats() {
+            const rad = angle * Math.PI / 180;
+            const vx = v0 * Math.cos(rad);
+            const vy = v0 * Math.sin(rad);
+
+            const disc = vy * vy + 2 * g * h0;
+            let tFlight = 0;
+            if (disc >= 0) {
+                tFlight = (vy + Math.sqrt(disc)) / g;
+            }
+            if (tFlight < 0) tFlight = 0;
+
+            const hMax = vy > 0 ? h0 + (vy * vy) / (2 * g) : h0;
+            const range = vx * tFlight;
+            const vyFinal = vy - g * tFlight;
+            const vf = Math.sqrt(vx * vx + vyFinal * vyFinal);
+
+            document.getElementById('statT').innerText = `${tFlight.toFixed(2)}s`;
+            document.getElementById('statH').innerText = `${hMax.toFixed(1)}m`;
+            document.getElementById('statR').innerText = `${range.toFixed(1)}m`;
+            document.getElementById('statVf').innerText = `${vf.toFixed(1)}m/s`;
+        }
+
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawGroundAndTarget();
+            drawLauncher();
+
+            if (tracePath && trajectory.length > 1) drawTrajectory();
+            if (isAnimating) drawProjectileAndVectors();
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            ctx.font = '10px monospace';
+            ctx.fillStyle = '#64748b';
+
+            // Detailed X grid lines
+            const xStep = Math.max(20, Math.round((worldBounds.xMax / 10) / camera.zoom));
+            for (let x = -500; x <= worldBounds.xMax * 2; x += xStep) {
+                const sx = toScreenX(x);
+                if (sx >= 0 && sx <= canvas.width) {
+                    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, canvas.height); ctx.stroke();
+                    ctx.fillText(`${Math.round(x)}m`, sx + 2, canvas.height - 6);
+                }
+            }
+
+            // Detailed Y grid lines
+            const yStep = Math.max(20, Math.round(((worldBounds.yMax - worldBounds.yMin) / 8) / camera.zoom));
+            for (let y = worldBounds.yMin - 500; y <= worldBounds.yMax * 2; y += yStep) {
+                const sy = toScreenY(y);
+                if (sy >= 0 && sy <= canvas.height) {
+                    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(canvas.width, sy); ctx.stroke();
+                    ctx.fillText(`${Math.round(y)}m`, 5, sy - 4);
+                }
+            }
+        }
+
+        function drawGroundAndTarget() {
+            const groundY = toScreenY(0);
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
+
+            const targetX = toScreenX(targetDist);
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath(); ctx.arc(targetX, groundY, 6, 0, Math.PI * 2); ctx.fill();
+
+            ctx.strokeStyle = '#f8fafc';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(targetX, groundY); ctx.lineTo(targetX, groundY - 24); ctx.stroke();
+
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(targetX, groundY - 24);
+            ctx.lineTo(targetX + 12, groundY - 18);
+            ctx.lineTo(targetX, groundY - 12);
+            ctx.fill();
+        }
+
+        function drawLauncher() {
+            const startX = toScreenX(0);
+            const startY = toScreenY(h0);
+
+            if (h0 !== 0) {
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(startX, toScreenY(0)); ctx.lineTo(startX, startY); ctx.stroke();
+            }
+
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath(); ctx.arc(startX, startY, 8, 0, Math.PI * 2); ctx.fill();
+        }
+
+        function drawTrajectory() {
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(toScreenX(trajectory[0].x), toScreenY(trajectory[0].y));
+            for (let i = 1; i < trajectory.length; i++) {
+                ctx.lineTo(toScreenX(trajectory[i].x), toScreenY(trajectory[i].y));
+            }
+            ctx.stroke();
+        }
+
+        function drawProjectileAndVectors() {
+            if (trajectory.length === 0) return;
+            const currentPos = trajectory[trajectory.length - 1];
+            const sx = toScreenX(currentPos.x);
+            const sy = toScreenY(currentPos.y);
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 12;
+            ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            if (showVectors) {
+                const rad = angle * Math.PI / 180;
+                const vx = v0 * Math.cos(rad);
+                const vy = v0 * Math.sin(rad) - g * animationTime;
+
+                drawArrow(sx, sy, sx + (vx / 10) * camera.zoom, sy, '#22c55e');
+                drawArrow(sx, sy, sx, sy - (vy / 10) * camera.zoom, '#22c55e');
+                drawArrow(sx, sy, sx, sy + (g * 1.5) * camera.zoom, '#ef4444');
+            }
+        }
+
+        function drawArrow(fromX, fromY, toX, toY, color) {
+            const headlen = 8;
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const a = Math.atan2(dy, dx);
+
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+
+            ctx.beginPath(); ctx.moveTo(fromX, fromY); ctx.lineTo(toX, toY); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(a - Math.PI / 6), toY - headlen * Math.sin(a - Math.PI / 6));
+            ctx.lineTo(toX - headlen * Math.cos(a + Math.PI / 6), toY - headlen * Math.sin(a + Math.PI / 6));
+            ctx.lineTo(toX, toY);
+            ctx.fill();
+        }
+
+        function updateAnimation() {
+            const rad = angle * Math.PI / 180;
+            const vx = v0 * Math.cos(rad);
+            const vy = v0 * Math.sin(rad);
+
+            animationTime += 0.1;
+            const x = vx * animationTime;
+            const y = h0 + vy * animationTime - 0.5 * g * animationTime * animationTime;
+
+            if (y >= 0 && x <= worldBounds.xMax * 2) {
+                trajectory.push({ x, y });
+                drawScene();
+                animFrameId = requestAnimationFrame(updateAnimation);
+            } else {
+                const disc = vy * vy + 2 * g * h0;
+                const tFlight = disc >= 0 ? (vy + Math.sqrt(disc)) / g : 0;
+                trajectory.push({ x: vx * tFlight, y: 0 });
+                isAnimating = false;
+                drawScene();
+                document.getElementById('fireBtn').innerText = '▶ Fire Again';
+            }
+        }
+
+        function fireSimulation() {
+            if (isAnimating) return;
+            isAnimating = true;
+            animationTime = 0;
+            trajectory = [];
+            document.getElementById('fireBtn').innerText = '▶ Simulating...';
+            updateAnimation();
+        }
+
+        document.getElementById('fireBtn').addEventListener('click', fireSimulation);
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            isAnimating = false;
+            animationTime = 0;
+            trajectory = [];
+            document.getElementById('fireBtn').innerText = '▶ Start / Fire';
+            syncInputs();
+        });
+
+        window.addEventListener('resize', updateCanvasDimensions);
+        syncInputs();
+        updateCanvasDimensions();
+        loadQuestion(0);
+    </script>
+</body>
+</html>
